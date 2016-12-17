@@ -8,10 +8,11 @@ import com.mirado.robocode.domain.RobotSpec;
 import com.mirado.robocode.engine.BattleRunner;
 import com.mirado.robocode.engine.RobotCompiler;
 import org.apache.commons.codec.digest.DigestUtils;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import robocode.control.RobotResults;
 
 import javax.inject.Inject;
 import java.io.File;
@@ -22,6 +23,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
@@ -39,13 +41,15 @@ public class RoboService
     private final AmazonS3Client amazonS3Client;
     private final RobotCompiler robotCompiler;
     private final ScoreService scoreService;
+    private final BattleRunner battleRunner;
 
     @Inject
-    public RoboService(AmazonS3Client amazonS3Client, RobotCompiler robotCompiler, ScoreService scoreService)
+    public RoboService(AmazonS3Client amazonS3Client, RobotCompiler robotCompiler, ScoreService scoreService, BattleRunner battleRunner)
     {
         this.amazonS3Client = amazonS3Client;
         this.robotCompiler = robotCompiler;
         this.scoreService = scoreService;
+        this.battleRunner = battleRunner;
     }
 
     public void putRobotAndRecompile(String repoName, RobotSpec robotSpec) throws IOException, InterruptedException
@@ -69,18 +73,19 @@ public class RoboService
             logger.info("Not running battle {} because it's already on s3 at {}", id, s3Key);
             return;
         }
-        File file = BattleRunner.runBattle();
-        if (file == null)
+        Pair<List<RobotResults>, File> pair = battleRunner.runBattle();
+        if (pair == null)
         {
-            throw new RuntimeException("No output file from running battle");
+            throw new RuntimeException("No output from running battle");
         }
+        File file = pair.getRight();
         Instant timestamp = Instant.now();
         ObjectMetadata objectMetadata = new ObjectMetadata();
         objectMetadata.addUserMetadata("timestamp", timestamp.toString());
         PutObjectRequest putObjectRequest = new PutObjectRequest(s3Bucket, s3Key, file)
                 .withMetadata(objectMetadata);
         amazonS3Client.putObject(putObjectRequest);
-        scoreService.triggerReplay(s3Key, FileUtils.readFileToByteArray(file), timestamp);
+        scoreService.storeResult(s3Key, pair.getKey(), timestamp);
     }
 
     /**

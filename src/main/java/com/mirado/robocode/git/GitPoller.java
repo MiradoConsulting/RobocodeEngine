@@ -8,7 +8,7 @@ import com.mirado.robocode.domain.RobotSpec;
 import com.mirado.robocode.domain.SourceLanguage;
 import com.mirado.robocode.services.RoboService;
 import com.netflix.archaius.api.Property;
-import org.apache.commons.io.IOUtils;
+import org.apache.commons.codec.binary.Base64;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -48,15 +48,16 @@ public class GitPoller
 
     private static SourceSpec findRobot(JsonNode directory) throws IOException
     {
-        for (JsonNode node : directory)
+        for (JsonNode node : directory.get("tree"))
         {
-            if (!"dir".equals(node.get("type").asText()))
+            if (!"tree".equals(node.get("type").asText()))
             {
-                String fileName = node.get("name").asText();
+                String fileName = node.get("path").asText();
                 String className = fileName.split("\\.")[0];
-                String content = IOUtils.toString(withSecret(node.get("download_url").asText()), StandardCharsets.UTF_8);
                 if (fileName.endsWith(".java") || fileName.endsWith(".clj"))
                 {
+                    JsonNode blobNode = readUrl(node.get("url").asText());
+                    String content = new String(Base64.decodeBase64(blobNode.get("content").asText()), StandardCharsets.UTF_8);
                     SourceSpec sourceSpec = null;
                     if (fileName.endsWith(".java"))
                     {
@@ -227,13 +228,13 @@ public class GitPoller
                 {
                     continue;
                 }
-                SourceSpec sourceSpec = findRobot(readUrl("https://api.github.com/repos/" + getGithubOrganization() + "/" + repoName + "/contents/src?ref=master"));
+                String version = getVersion(repoName);
+                SourceSpec sourceSpec = findRobot(readUrl("https://api.github.com/repos/" + getGithubOrganization() + "/" + repoName + "/git/trees/" + version));
                 if (sourceSpec == null)
                 {
                     LAST_CHECKED.put(repoName, Instant.now());
                     continue;
                 }
-                String version = getVersion(repoName);
                 RobotSpec robotSpec = RobotSpec
                         .newBuilder()
                         .lastPushed(lastPushed)
@@ -254,7 +255,7 @@ public class GitPoller
                 roboService.runBattleAndUploadToS3();
             }
         }
-        catch (IOException | InterruptedException e)
+        catch (Exception e)
         {
             logger.error("", e);
         }

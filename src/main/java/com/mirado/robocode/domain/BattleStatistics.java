@@ -1,13 +1,9 @@
 package com.mirado.robocode.domain;
 
-import com.fasterxml.jackson.annotation.JsonSetter;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
 import robocode.BattleResults;
+import robocode.control.RobotResults;
 
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -17,7 +13,7 @@ import java.util.List;
 public class BattleStatistics
 {
     private final Instant timestamp;
-    private final List<BattleResults> results;
+    private final List<RobotResults> results;
 
     private BattleStatistics(Builder builder)
     {
@@ -30,20 +26,12 @@ public class BattleStatistics
         return new Builder();
     }
 
-    public static Builder newBuilder(BattleStatistics copy)
-    {
-        Builder builder = new Builder();
-        builder.timestamp = copy.timestamp;
-        builder.results = new ArrayList<>(copy.results);
-        return builder;
-    }
-
     public Instant getTimestamp()
     {
         return timestamp;
     }
 
-    public List<BattleResults> getResults()
+    public List<RobotResults> getResults()
     {
         return results;
     }
@@ -51,7 +39,7 @@ public class BattleStatistics
     public static final class Builder
     {
         private Instant timestamp;
-        private List<BattleResults> results;
+        private List<RobotResults> results;
 
         private Builder()
         {
@@ -63,17 +51,7 @@ public class BattleStatistics
             return this;
         }
 
-        public Builder results(BattleResults... val)
-        {
-            if (results == null)
-            {
-                results = new ArrayList<>();
-            }
-            results.addAll(Arrays.asList(val));
-            return this;
-        }
-
-        public Builder results(List<BattleResults> val)
+        public Builder results(List<RobotResults> val)
         {
             results = val;
             return this;
