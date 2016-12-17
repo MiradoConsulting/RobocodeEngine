@@ -2,10 +2,10 @@ package com.mirado.robocode.engine;
 
 import net.sf.robocode.battle.IBattleManagerBase;
 import net.sf.robocode.core.ContainerBase;
-import net.sf.robocode.recording.BattleRecordFormat;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import robocode.BattleResults;
 import robocode.control.BattleSpecification;
 import robocode.control.BattlefieldSpecification;
 import robocode.control.RobocodeEngine;
@@ -27,11 +27,13 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 
 /**
- * Created by Kurt on 04/12/16.
+ * Runs battles, records to files and replays files.
  */
+@SuppressWarnings("unchecked")
 public class BattleRunner
 {
     private static final Logger logger = LoggerFactory.getLogger(BattleRunner.class);
@@ -59,15 +61,6 @@ public class BattleRunner
             public void onBattleCompleted(BattleCompletedEvent event)
             {
                 logger.info("Battle completed");
-                try
-                {
-                    recordedFile[0] = recordFile(iBattleManagerBase);
-                    logger.info("Recorded to file {} ", recordedFile[0].getAbsolutePath());
-                }
-                catch (Throwable e)
-                {
-                    logger.error("Could not save file", e);
-                }
             }
 
             @Override
@@ -117,15 +110,27 @@ public class BattleRunner
             }
         });
         iBattleManagerBase.startNewBattle(new BattleSpecification(10, new BattlefieldSpecification(), robocodeEngine.getLocalRepository()), null, true, true);
+        try
+        {
+            recordedFile[0] = recordFile(iBattleManagerBase);
+            logger.info("Recorded to file {} ", recordedFile[0].getAbsolutePath());
+        }
+        catch (Throwable e)
+        {
+            logger.error("Could not save file", e);
+        }
+
         return recordedFile[0];
     }
 
-    public static BattleCompletedEvent replay(byte[] bytes) throws IOException
+    public static List<BattleResults> replay(byte[] bytes) throws IOException
     {
         try
         {
             File tempFile = File.createTempFile("temp", "recording");
             FileUtils.writeByteArrayToFile(tempFile, bytes);
+            //Gotta love it, this has side effects that make the below line not return null <3
+            new RobocodeEngine();
             IBattleManagerBase battleManager = ContainerBase.getComponent(IBattleManagerBase.class);
             Field recordManagerField = battleManager.getClass().getDeclaredField("recordManager");
             recordManagerField.setAccessible(true);
@@ -138,25 +143,24 @@ public class BattleRunner
             Method loadRecord = maybeLoadRecord.get();
             loadRecord.invoke(recordManager, tempFile.getAbsolutePath(), Enum.valueOf((Class<Enum>) loadRecord.getParameterTypes()[1], "BINARY_ZIP"));
 
-            final BattleCompletedEvent[] event = new BattleCompletedEvent[1];
             battleManager.addListener(new IBattleListener()
             {
                 @Override
-                public void onBattleStarted(BattleStartedEvent battleStartedEvent)
+                public void onBattleStarted(BattleStartedEvent event)
                 {
-
+                    logger.info("Replay: Starting battle for {} robots", event.getRobotsCount());
                 }
 
                 @Override
-                public void onBattleFinished(BattleFinishedEvent battleFinishedEvent)
+                public void onBattleFinished(BattleFinishedEvent event)
                 {
-
+                    logger.info("Replay: Battle finished. isAborted:{}", event.isAborted());
                 }
 
                 @Override
                 public void onBattleCompleted(BattleCompletedEvent battleCompletedEvent)
                 {
-                    event[0] = battleCompletedEvent;
+                    logger.info("Replay: Battle completed");
                 }
 
                 @Override
@@ -172,16 +176,17 @@ public class BattleRunner
                 }
 
                 @Override
-                public void onRoundStarted(RoundStartedEvent roundStartedEvent)
+                public void onRoundStarted(RoundStartedEvent event)
                 {
-
+                    logger.info("Starting round {}", event.getRound());
                 }
 
                 @Override
-                public void onRoundEnded(RoundEndedEvent roundEndedEvent)
+                public void onRoundEnded(RoundEndedEvent event)
                 {
-
+                    logger.info("Round {} done", event.getRound());
                 }
+
 
                 @Override
                 public void onTurnStarted(TurnStartedEvent turnStartedEvent)
@@ -196,22 +201,29 @@ public class BattleRunner
                 }
 
                 @Override
-                public void onBattleMessage(BattleMessageEvent battleMessageEvent)
+                public void onBattleMessage(BattleMessageEvent event)
                 {
-
+                    logger.info(event.getMessage());
                 }
 
                 @Override
-                public void onBattleError(BattleErrorEvent battleErrorEvent)
+                public void onBattleError(BattleErrorEvent event)
                 {
-
+                    logger.error("Error when running battle {}", event.getError());
                 }
             });
             Method replay = battleManager.getClass().getDeclaredMethod("replay");
             replay.setAccessible(true);
             replay.invoke(battleManager);
             battleManager.waitTillOver();
-            return event[0];
+            Field recordInfoField = recordManager.getClass().getDeclaredField("recordInfo");
+            recordInfoField.setAccessible(true);
+            Object recordInfo = recordInfoField.get(recordManager);
+            Field resultsField = recordInfo.getClass().getDeclaredField("results");
+            resultsField.setAccessible(true);
+            Object resultsObject = resultsField.get(recordInfo);
+            List<BattleResults> results = (List<BattleResults>) resultsObject;
+            return results;
         }
         catch (Exception ex)
         {

@@ -6,28 +6,35 @@ import com.amazonaws.services.s3.model.ListObjectsV2Result;
 import com.amazonaws.services.s3.model.S3Object;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.mirado.robocode.archaius.Config;
+import com.mirado.robocode.domain.BattleStatistics;
 import com.mirado.robocode.engine.BattleRunner;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import robocode.control.events.BattleCompletedEvent;
+import robocode.BattleResults;
 
 import javax.inject.Inject;
+import java.io.IOException;
 import java.io.InputStream;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 
 /**
- * Created by Kurt on 04/12/16.
+ * Checks S3 for replay files, replays them and tracks the overall scoreboard
  */
 public class ScoreService
 {
     private static final Logger logger = LoggerFactory.getLogger(ScoreService.class);
     private final Timer timer = new Timer(true);
     private final AmazonS3Client s3client;
-    private final Map<String, BattleCompletedEvent> battles = new HashMap<>();
+    private final Map<String, BattleStatistics> battles = new HashMap<>();
 
     @Inject
     public ScoreService(AmazonS3Client s3client)
@@ -51,7 +58,7 @@ public class ScoreService
     private void run()
     {
         String bucket = Config.getS3Bucket();
-        final ListObjectsV2Request req = new ListObjectsV2Request().withBucketName(bucket);
+        final ListObjectsV2Request req = new ListObjectsV2Request().withBucketName(bucket).withPrefix("runs/");
         ListObjectsV2Result result;
         do
         {
@@ -62,6 +69,10 @@ public class ScoreService
             {
                 try
                 {
+                    if (objectSummary.getSize() == 0)
+                    {
+                        continue;
+                    }
                     String key = objectSummary.getKey();
                     if (battles.containsKey(key))
                     {
@@ -74,8 +85,7 @@ public class ScoreService
                         int length = (int) s3Object.getObjectMetadata().getContentLength();
                         bytes = IOUtils.readFully(inputStream, length);
                     }
-                    BattleCompletedEvent battleCompletedEvent = BattleRunner.replay(bytes);
-                    battles.put(key, battleCompletedEvent);
+                    triggerReplay(key, bytes, Instant.parse(s3Object.getObjectMetadata().getUserMetadata().get("timestamp")));
                 }
                 catch (Exception ex)
                 {
@@ -84,5 +94,22 @@ public class ScoreService
             }
             req.setContinuationToken(result.getNextContinuationToken());
         } while (result.isTruncated());
+    }
+
+    void triggerReplay(String key, byte[] replayBytes, Instant timestamp) throws IOException
+    {
+        List<BattleResults> battleCompletedEvent = BattleRunner.replay(replayBytes);
+        battles.put(key, BattleStatistics
+                .newBuilder()
+                .results(battleCompletedEvent)
+                .timestamp(timestamp)
+                .build());
+    }
+
+    public Collection<BattleStatistics> getStatistics()
+    {
+        List<BattleStatistics> battleStatistics = new ArrayList<>(battles.values());
+        battleStatistics.sort(Comparator.comparing(BattleStatistics::getTimestamp));
+        return battleStatistics;
     }
 }

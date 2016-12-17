@@ -1,7 +1,12 @@
 package com.mirado.robocode.dropwizard;
 
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.inject.Injector;
+import com.mirado.robocode.resources.StatisticsResource;
 import io.dropwizard.Application;
+import io.dropwizard.Bundle;
+import io.dropwizard.Configuration;
 import io.dropwizard.setup.Environment;
 
 /**
@@ -27,6 +32,8 @@ public class RobocodeApplication extends Application<RoboConfiguration>
      */
     public void run(RoboConfiguration configuration, Environment environment) throws Exception
     {
-
+        environment.jersey().register(injector.getInstance(StatisticsResource.class));
+        environment.getObjectMapper().registerModule(new JavaTimeModule());
+        environment.getObjectMapper().configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
     }
 }

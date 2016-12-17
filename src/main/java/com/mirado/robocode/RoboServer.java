@@ -17,13 +17,16 @@ public class RoboServer
     {
         try
         {
+            System.setProperty("sun.io.useCanonCaches", "false");
+            System.setProperty("NOSECURITY", "true");
+
             Config.init();
             Injector injector = Guice.createInjector(new RoboModule());
             RobocodeApplication application = new RobocodeApplication(injector);
             ScoreService scoreService = injector.getInstance(ScoreService.class);
             scoreService.start();
-            //GitPoller gitPoller = injector.getInstance(GitPoller.class);
-            //gitPoller.start();
+            GitPoller gitPoller = injector.getInstance(GitPoller.class);
+            gitPoller.start();
             application.run("server", Thread.currentThread().getContextClassLoader().getResource("config.yaml").getPath());
         }
         catch (Exception ex)

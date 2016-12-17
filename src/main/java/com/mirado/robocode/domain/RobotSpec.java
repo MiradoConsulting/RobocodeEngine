@@ -1,10 +1,15 @@
 package com.mirado.robocode.domain;
 
+import com.fasterxml.jackson.annotation.JsonSetter;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonPOJOBuilder;
+
 import java.time.Instant;
 
 /**
  * Created by Kurt on 04/12/16.
  */
+@JsonDeserialize(builder = RobotSpec.Builder.class)
 public class RobotSpec
 {
     private final String name;
@@ -14,6 +19,8 @@ public class RobotSpec
     private final String className;
     private final String source;
     private final String packageName;
+    private final String version;
+    private final SourceLanguage sourceLanguage;
 
     private RobotSpec(Builder builder)
     {
@@ -24,24 +31,13 @@ public class RobotSpec
         className = builder.className;
         source = builder.source;
         packageName = builder.packageName;
+        version = builder.version;
+        sourceLanguage = builder.sourceLanguage;
     }
 
     public static Builder newBuilder()
     {
         return new Builder();
-    }
-
-    public static Builder newBuilder(RobotSpec copy)
-    {
-        Builder builder = new Builder();
-        builder.name = copy.name;
-        builder.owner = copy.owner;
-        builder.url = copy.url;
-        builder.lastPushed = copy.lastPushed;
-        builder.className = copy.className;
-        builder.source = copy.source;
-        builder.packageName = copy.packageName;
-        return builder;
     }
 
     public String getName()
@@ -79,6 +75,17 @@ public class RobotSpec
         return packageName;
     }
 
+    public SourceLanguage getSourceLanguage()
+    {
+        return sourceLanguage;
+    }
+
+    public String getVersion()
+    {
+        return version;
+    }
+
+    @JsonPOJOBuilder(withPrefix = "")
     public static final class Builder
     {
         private String name;
@@ -88,6 +95,8 @@ public class RobotSpec
         private String className;
         private String source;
         private String packageName;
+        private String version;
+        private SourceLanguage sourceLanguage;
 
         private Builder()
         {
@@ -132,6 +141,19 @@ public class RobotSpec
         public Builder packageName(String val)
         {
             packageName = val;
+            return this;
+        }
+
+        public Builder version(String val)
+        {
+            version = val;
+            return this;
+        }
+
+        @JsonSetter
+        public Builder sourceLanguage(SourceLanguage val)
+        {
+            sourceLanguage = val;
             return this;
         }
 

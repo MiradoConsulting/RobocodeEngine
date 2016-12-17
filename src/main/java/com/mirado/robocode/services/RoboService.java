@@ -1,11 +1,14 @@
 package com.mirado.robocode.services;
 
 import com.amazonaws.services.s3.AmazonS3Client;
-import com.amazonaws.util.Md5Utils;
+import com.amazonaws.services.s3.model.ObjectMetadata;
+import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.mirado.robocode.archaius.Config;
 import com.mirado.robocode.domain.RobotSpec;
 import com.mirado.robocode.engine.BattleRunner;
 import com.mirado.robocode.engine.RobotCompiler;
+import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,6 +20,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -24,32 +28,24 @@ import java.util.Set;
 import java.util.TreeSet;
 
 /**
- * Created by Kurt on 04/12/16.
+ * Keeps track of the existing robots, compiles them and triggers battles.
  */
 public class RoboService
 {
     private static final Logger logger = LoggerFactory.getLogger(RoboService.class);
     private static final File robotsDirectory = new File("robots");
-
-    static
-    {
-        System.setProperty("ROBOTPATH", robotsDirectory.getAbsolutePath());
-        if (!robotsDirectory.exists())
-        {
-            if (!robotsDirectory.mkdir())
-            {
-                throw new IllegalStateException("Could not create dir " + robotsDirectory.getAbsolutePath());
-            }
-        }
-    }
-
+    private static final File clojureClassesDirectory = Paths.get(robotsDirectory.getAbsolutePath(), "classes").toFile();
     private final Map<String, RobotSpec> robots = new HashMap<>();
     private final AmazonS3Client amazonS3Client;
+    private final RobotCompiler robotCompiler;
+    private final ScoreService scoreService;
 
     @Inject
-    public RoboService(AmazonS3Client amazonS3Client)
+    public RoboService(AmazonS3Client amazonS3Client, RobotCompiler robotCompiler, ScoreService scoreService)
     {
         this.amazonS3Client = amazonS3Client;
+        this.robotCompiler = robotCompiler;
+        this.scoreService = scoreService;
     }
 
     public void putRobotAndRecompile(String repoName, RobotSpec robotSpec) throws IOException, InterruptedException
@@ -63,7 +59,7 @@ public class RoboService
         return robots.get(repoName);
     }
 
-    public void runBattleAndUploadToS3()
+    public void runBattleAndUploadToS3() throws IOException
     {
         String id = getCurrentSetupId();
         String s3Key = "runs/" + id;
@@ -78,7 +74,13 @@ public class RoboService
         {
             throw new RuntimeException("No output file from running battle");
         }
-        amazonS3Client.putObject(s3Bucket, s3Key, file);
+        Instant timestamp = Instant.now();
+        ObjectMetadata objectMetadata = new ObjectMetadata();
+        objectMetadata.addUserMetadata("timestamp", timestamp.toString());
+        PutObjectRequest putObjectRequest = new PutObjectRequest(s3Bucket, s3Key, file)
+                .withMetadata(objectMetadata);
+        amazonS3Client.putObject(putObjectRequest);
+        scoreService.triggerReplay(s3Key, FileUtils.readFileToByteArray(file), timestamp);
     }
 
     /**
@@ -98,12 +100,12 @@ public class RoboService
         {
             stringBuilder.append(s);
         }
-        return Md5Utils.md5AsBase64(stringBuilder.toString().getBytes(StandardCharsets.UTF_8));
+        return DigestUtils.md5Hex(stringBuilder.toString().getBytes(StandardCharsets.UTF_8));
     }
 
     private void recompile(RobotSpec robotSpec) throws IOException, InterruptedException
     {
-        String relativePath = robotSpec.getPackageName().replace('.', '/') + "/" + robotSpec.getClassName() + ".java";
+        String relativePath = robotSpec.getPackageName().replace('.', '/') + "/" + robotSpec.getClassName() + robotSpec.getSourceLanguage().getExtension();
         Path path = Paths.get(robotsDirectory.getAbsolutePath(), relativePath);
         File file = path.toFile();
         if (!file.getParentFile().exists() && !file.getParentFile().mkdirs())
@@ -114,7 +116,7 @@ public class RoboService
         {
             IOUtils.write(robotSpec.getSource(), fileWriter);
         }
-        Path propertiesPath = Paths.get(robotsDirectory.getAbsolutePath(), relativePath.replace(".java", ".properties"));
+        Path propertiesPath = Paths.get(robotsDirectory.getAbsolutePath(), relativePath.replace(robotSpec.getSourceLanguage().getExtension(), ".properties"));
         Properties properties = new Properties();
         properties.put("robot.description", robotSpec.getOwner());
         properties.put("robot.webpage", robotSpec.getUrl());
@@ -123,10 +125,30 @@ public class RoboService
         properties.put("robot.author.name", robotSpec.getOwner());
         properties.put("robot.classname", robotSpec.getPackageName() + "." + robotSpec.getClassName());
         properties.put("robot.name", robotSpec.getName());
+        properties.put("robot.version", robotSpec.getVersion());
         try (FileWriter fileWriter = new FileWriter(propertiesPath.toFile()))
         {
             properties.store(fileWriter, "");
         }
-        RobotCompiler.compile(file);
+        robotCompiler.compile(file, robotSpec.getSourceLanguage());
+    }
+
+    static
+    {
+        System.setProperty("ROBOTPATH", robotsDirectory.getAbsolutePath());
+        if (!robotsDirectory.exists())
+        {
+            if (!robotsDirectory.mkdir())
+            {
+                throw new IllegalStateException("Could not create dir " + robotsDirectory.getAbsolutePath());
+            }
+        }
+        if (!clojureClassesDirectory.exists())
+        {
+            if (!clojureClassesDirectory.mkdir())
+            {
+                throw new IllegalStateException("Could not create dir " + clojureClassesDirectory.getAbsolutePath());
+            }
+        }
     }
 }

@@ -7,4 +7,5 @@ import io.dropwizard.Configuration;
  */
 public class RoboConfiguration extends Configuration
 {
+
 }

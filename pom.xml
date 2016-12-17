@@ -99,6 +99,13 @@
             <systemPath>${basedir}/libs/picocontainer-2.14.2.jar</systemPath>
         </dependency>
         <dependency>
+            <groupId>clojure</groupId>
+            <artifactId>>clojure</artifactId>
+            <version>1.8</version>
+            <scope>system</scope>
+            <systemPath>${basedir}/libs/clojure.jar</systemPath>
+        </dependency>
+        <dependency>
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
             <version>2.5</version>
@@ -128,7 +135,11 @@
             <artifactId>commons-configuration</artifactId>
             <version>1.8</version>
         </dependency>
-
+        <dependency>
+            <groupId>com.fasterxml.jackson.datatype</groupId>
+            <artifactId>jackson-datatype-jsr310</artifactId>
+            <version>2.6.7</version>
+        </dependency>
     </dependencies>
 
 </project>
