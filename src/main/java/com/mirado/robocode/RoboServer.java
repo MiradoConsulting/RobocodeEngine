@@ -8,6 +8,8 @@ import com.mirado.robocode.git.GitPoller;
 import com.mirado.robocode.guice.RoboModule;
 import com.mirado.robocode.services.ScoreService;
 
+import java.io.File;
+
 /**
  * Created by Kurt on 18/11/16.
  */
@@ -17,6 +19,12 @@ public class RoboServer
     {
         try
         {
+            if (args.length < 1)
+            {
+                System.out.println("Need to specify at least one configuration file");
+                return;
+            }
+            String config = new File(args[0]).getAbsolutePath();
             System.setProperty("sun.io.useCanonCaches", "false");
             System.setProperty("NOSECURITY", "true");
 
@@ -27,7 +35,7 @@ public class RoboServer
             scoreService.start();
             GitPoller gitPoller = injector.getInstance(GitPoller.class);
             gitPoller.start();
-            application.run("server", Thread.currentThread().getContextClassLoader().getResource("config.yaml").getPath());
+            application.run("server", config);
         }
         catch (Exception ex)
         {

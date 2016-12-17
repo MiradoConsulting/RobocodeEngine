@@ -68,7 +68,7 @@ public class RobotCompiler
         }
         else if (language == SourceLanguage.CLOJURE)
         {
-            String classPath = COMPILER_CLASSPATH + File.pathSeparator + FileUtil.getCwd().getAbsolutePath() + "/libs" + File.separator + "clojure.jar";
+            String classPath = COMPILER_CLASSPATH + File.pathSeparator + FileUtil.getCwd().getAbsolutePath() + "/libs" + File.separator + "clojure-1.8.jar";
             compilerProperties.setCompilerBinary("java");
             compilerProperties.setCompilerClasspath("-cp " + classPath);
             compilerProperties.setCompilerOptions("-Dclojure.compile.path=classes clojure.lang.Compile");
