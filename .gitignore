@@ -33,3 +33,4 @@ service.json
 *.orig
 robots/
 config/
+.DS_Store
