@@ -120,6 +120,11 @@ public class ScoreService
                 .build());
     }
 
+    public Map<String, BattleStatistics> getBattles()
+    {
+        return Collections.unmodifiableMap(battles);
+    }
+
     public Scoreboard getStatistics()
     {
         List<BattleStatistics> battleStatistics = new ArrayList<>(battles.values());

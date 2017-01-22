@@ -1,6 +1,7 @@
 package com.mirado.robocode.engine;
 
 import com.mirado.robocode.archaius.Config;
+import com.netflix.archaius.api.Property;
 import net.sf.robocode.battle.IBattleManagerBase;
 import net.sf.robocode.core.ContainerBase;
 import net.sf.robocode.repository.IRepositoryManager;
@@ -38,6 +39,9 @@ public class BattleRunner
     private final IWindowManager windowManager;
     private final Object lock = new Object();
     private final LoggingBattleListener loggingBattleListener = new LoggingBattleListener();
+    private final Property<Integer> width = Config.getPropertyFactory().getProperty("battlefield.width").asInteger(1024);
+    private final Property<Integer> height = Config.getPropertyFactory().getProperty("battlefield.height").asInteger(768);
+
 
     public BattleRunner()
     {
@@ -61,7 +65,7 @@ public class BattleRunner
         RobotSpecification[] robots = robocodeEngine.getLocalRepository();
         synchronized (lock)
         {
-            iBattleManagerBase.startNewBattle(new BattleSpecification(10, new BattlefieldSpecification(), robots), null, true, true);
+            iBattleManagerBase.startNewBattle(new BattleSpecification(10, new BattlefieldSpecification(width.get(), height.get()), robots), null, true, true);
         }
         try
         {
