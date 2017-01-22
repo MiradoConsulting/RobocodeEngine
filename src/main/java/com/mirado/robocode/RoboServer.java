@@ -24,6 +24,16 @@ public class RoboServer
                 System.out.println("Need to specify at least one configuration file");
                 return;
             }
+            boolean enableUi;
+            if (args.length >= 2)
+            {
+                enableUi = Boolean.valueOf(args[1]);
+            }
+            else
+            {
+                enableUi = false;
+            }
+            Config.setEnableUi(enableUi);
             String config = new File(args[0]).getAbsolutePath();
             System.setProperty("sun.io.useCanonCaches", "false");
             System.setProperty("NOSECURITY", "true");

@@ -35,3 +35,4 @@ robots/
 config/
 .DS_Store
 dependency-reduced-pom.xml
+release.zip

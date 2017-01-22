@@ -11,6 +11,7 @@ import net.sf.robocode.settings.SettingsManager;
 import net.sf.robocode.version.VersionManager;
 
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Created by Kurt on 04/12/16.
@@ -20,6 +21,7 @@ public class Config
     private static final CompositeConfig config;
     private static final DefaultPropertyFactory propertyFactory;
     private static String roboCodeVersion;
+    private static AtomicReference<Boolean> enableUi = new AtomicReference<>();
 
     static
     {
@@ -35,6 +37,7 @@ public class Config
     }
 
     private static final Property<String> S3_BUCKET = Config.getPropertyFactory().getProperty("recording.s3_bucket").asString(null);
+
     public static DefaultPropertyFactory getPropertyFactory()
     {
         return propertyFactory;
@@ -64,5 +67,15 @@ public class Config
             throw new IllegalArgumentException("recording.s3_bucket must be configured!");
         }
         return s3Bucket;
+    }
+
+    public static boolean enableUi()
+    {
+        return enableUi.get();
+    }
+
+    public static void setEnableUi(boolean enabled)
+    {
+        enableUi.set(enabled);
     }
 }

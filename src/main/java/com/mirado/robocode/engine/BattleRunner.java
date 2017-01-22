@@ -1,13 +1,14 @@
 package com.mirado.robocode.engine;
 
+import com.mirado.robocode.archaius.Config;
 import net.sf.robocode.battle.IBattleManagerBase;
 import net.sf.robocode.core.ContainerBase;
 import net.sf.robocode.repository.IRepositoryManager;
+import net.sf.robocode.ui.IWindowManager;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import robocode.BattleResults;
 import robocode.control.BattleSpecification;
 import robocode.control.BattlefieldSpecification;
 import robocode.control.RobocodeEngine;
@@ -34,6 +35,7 @@ public class BattleRunner
     private final RobocodeEngine robocodeEngine;
     private final IBattleManagerBase iBattleManagerBase;
     private final IRepositoryManager repositoryManager;
+    private final IWindowManager windowManager;
     private final Object lock = new Object();
     private final LoggingBattleListener loggingBattleListener = new LoggingBattleListener();
 
@@ -42,6 +44,14 @@ public class BattleRunner
         robocodeEngine = new RobocodeEngine();
         iBattleManagerBase = ContainerBase.getComponent(IBattleManagerBase.class);
         repositoryManager = ContainerBase.getComponent(IRepositoryManager.class);
+        windowManager = ContainerBase.getComponent(IWindowManager.class);
+        if (Config.enableUi())
+        {
+            windowManager.setSlave(false);
+            windowManager.setEnableGUI(true);
+            windowManager.init();
+            windowManager.showRobocodeFrame(true, false);
+        }
         iBattleManagerBase.addListener(loggingBattleListener);
     }
 
@@ -63,7 +73,7 @@ public class BattleRunner
                 throw new IllegalStateException("Could not get results :(");
             }
             List<RobotResults> results = Arrays.stream(battleCompletedEvent.getSortedResults())
-                    .map(result->(RobotResults)result)
+                    .map(result -> (RobotResults) result)
                     .collect(Collectors.toList());
             return Pair.of(results, file);
         }
