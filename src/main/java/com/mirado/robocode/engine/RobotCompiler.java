@@ -55,7 +55,7 @@ public class RobotCompiler
         if (language == SourceLanguage.JAVA)
         {
             String compilerBinary = "javac";
-            String compilerOptions = "-deprecation -g -source 1.6 -encoding UTF-8";
+            String compilerOptions = "-deprecation -g -source 8 -encoding UTF-8";
 
             if (!testCompiler(compilerBinary))
             {

@@ -39,8 +39,8 @@ public class BattleRunner
     private final IWindowManager windowManager;
     private final Object lock = new Object();
     private final LoggingBattleListener loggingBattleListener = new LoggingBattleListener();
-    private final Property<Integer> width = Config.getPropertyFactory().getProperty("battlefield.width").asInteger(1024);
-    private final Property<Integer> height = Config.getPropertyFactory().getProperty("battlefield.height").asInteger(768);
+    private final Property<Integer> width = Config.getPropertyFactory().getProperty("battlefield.width").asInteger(2048);
+    private final Property<Integer> height = Config.getPropertyFactory().getProperty("battlefield.height").asInteger(1536);
 
 
     public BattleRunner()

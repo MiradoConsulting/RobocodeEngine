@@ -82,51 +82,51 @@
         <dependency>
             <groupId>robocode</groupId>
             <artifactId>robocode</artifactId>
-            <version>1.9.2.5</version>
+            <version>1.9.2.6</version>
             <scope>system</scope>
             <systemPath>${basedir}/libs/robocode.jar</systemPath>
         </dependency>
         <dependency>
             <groupId>robocode</groupId>
             <artifactId>robocode-core</artifactId>
-            <version>1.9.2.5</version>
+            <version>1.9.2.6</version>
             <scope>system</scope>
-            <systemPath>${basedir}/libs/robocode.core-1.9.2.5.jar</systemPath>
+            <systemPath>${basedir}/libs/robocode.core-1.9.2.6.jar</systemPath>
         </dependency>
         <dependency>
             <groupId>robocode</groupId>
             <artifactId>robocode-ui</artifactId>
-            <version>1.9.2.5</version>
+            <version>1.9.2.6</version>
             <scope>system</scope>
-            <systemPath>${basedir}/libs/robocode.ui-1.9.2.5.jar</systemPath>
+            <systemPath>${basedir}/libs/robocode.ui-1.9.2.6.jar</systemPath>
         </dependency>
         <dependency>
             <groupId>robocode</groupId>
             <artifactId>robocode-ui-editor</artifactId>
-            <version>1.9.2.5</version>
+            <version>1.9.2.6</version>
             <scope>system</scope>
-            <systemPath>${basedir}/libs/robocode.ui.editor-1.9.2.5.jar</systemPath>
+            <systemPath>${basedir}/libs/robocode.ui.editor-1.9.2.6.jar</systemPath>
         </dependency>
         <dependency>
             <groupId>robocode</groupId>
             <artifactId>robocode-battle</artifactId>
-            <version>1.9.2.5</version>
+            <version>1.9.2.6</version>
             <scope>system</scope>
-            <systemPath>${basedir}/libs/robocode.battle-1.9.2.5.jar</systemPath>
+            <systemPath>${basedir}/libs/robocode.battle-1.9.2.6.jar</systemPath>
         </dependency>
         <dependency>
             <groupId>robocode</groupId>
             <artifactId>robocode-repository</artifactId>
-            <version>1.9.2.5</version>
+            <version>1.9.2.6</version>
             <scope>system</scope>
-            <systemPath>${basedir}/libs/robocode.repository-1.9.2.5.jar</systemPath>
+            <systemPath>${basedir}/libs/robocode.repository-1.9.2.6.jar</systemPath>
         </dependency>
         <dependency>
             <groupId>robocode</groupId>
             <artifactId>robocode-host</artifactId>
-            <version>1.9.2.5</version>
+            <version>1.9.2.6</version>
             <scope>system</scope>
-            <systemPath>${basedir}/libs/robocode.host-1.9.2.5.jar</systemPath>
+            <systemPath>${basedir}/libs/robocode.host-1.9.2.6.jar</systemPath>
         </dependency>
         <dependency>
             <groupId>picocontainer</groupId>

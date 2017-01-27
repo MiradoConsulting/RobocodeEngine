@@ -239,7 +239,7 @@ public class GitPoller
                         .newBuilder()
                         .lastPushed(lastPushed)
                         .name(sourceSpec.className)
-                        .owner(robotJson.get("owner").asText())
+                        .owner(robotJson.has("owner") ? robotJson.get("owner").asText() : sourceSpec.className)
                         .url(repo.get("html_url").asText())
                         .className(sourceSpec.className)
                         .source(sourceSpec.source)
